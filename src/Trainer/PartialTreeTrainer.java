@@ -76,11 +76,11 @@ public class PartialTreeTrainer {
             System.out.println("accuracy : " + accuracy);
 
             System.out.print("\nsaving current model...");
-            onlineClassifier.saveModel(modelPath + "_" + iter);
+            onlineClassifier.saveModel(modelPath + "_" + iter+1, possibleLabels);
             System.out.println("done!");
 
             System.out.print("loading current model...");
-            OnlineClassifier avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + iter);
+            OnlineClassifier avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + iter+1);
             System.out.println("done!");
 
             GraphBasedParser parser = new GraphBasedParser(avgPerceptron, possibleLabels);
@@ -109,16 +109,12 @@ public class PartialTreeTrainer {
                         String goldLabel = sentence.label(ch);
                         int argmax = parseTree.head(ch);
 
-                        try {
-                            String bestLabel = parseTree.label(ch);
+                        String bestLabel = parseTree.label(ch);
 
-                            if (argmax == goldHead) {
-                                unlabelCorrect++;
-                                if (bestLabel.equals(goldLabel))
-                                    labelCorrect++;
-                            }
-                        } catch (Exception ex) {
-                            System.out.print("Why?");
+                        if (argmax == goldHead) {
+                            unlabelCorrect++;
+                            if (bestLabel.equals(goldLabel))
+                                labelCorrect++;
                         }
                     }
                 }

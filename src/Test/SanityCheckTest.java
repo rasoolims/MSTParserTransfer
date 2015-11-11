@@ -2,9 +2,12 @@ package Test;
 
 import Accessories.TreebankReader;
 import Classifier.AveragedPerceptron;
+import Decoder.GraphBasedParser;
 import Structures.Sentence;
 import Trainer.PartialTreeTrainer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 
 /**
@@ -38,7 +41,7 @@ public class SanityCheckTest {
             }
         } else{
             System.out.println(" train/parse train_file/input_file dev_file(can_be_empty with -)/output_file model_file");
-           // System.exit(0);
+            System.exit(0);
         }
 
         if(train) {
@@ -63,6 +66,29 @@ public class SanityCheckTest {
             }
 
             PartialTreeTrainer.standardTrain(trainData, devData, possibleLabels, onlineClassifier, modelPath, 30);
+        }  else {
+            AveragedPerceptron averagedPerceptron = new AveragedPerceptron();
+            averagedPerceptron = (AveragedPerceptron) averagedPerceptron.loadModel(modelPath);
+            ArrayList<Sentence> inputData = TreebankReader.readConllSentences(inputPath);
+            GraphBasedParser parser = new GraphBasedParser(averagedPerceptron, averagedPerceptron.getPossibleLabels());
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath));
+
+            long start = System.currentTimeMillis();
+            int count =0;
+            for(Sentence data: inputData){
+                count++;
+                 Sentence parsed = parser.eisner1stOrder(data,true);
+                writer.write(parsed.toString());
+                if(count%10==0)
+                    System.out.print(count+"...");
+            }
+            System.out.print(count+"\n");
+            long end = System.currentTimeMillis();
+            double timeSec = (1.0 * (end - start)) / count;
+            System.out.println("");
+            System.out.println("time for each sentence: " + timeSec);
+            writer.close();
+            
         }
     }
 }

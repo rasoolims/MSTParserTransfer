@@ -16,11 +16,13 @@ import java.util.zip.GZIPOutputStream;
 public class AveragedPerceptron extends OnlineClassifier implements Serializable {
     HashMap<String, Double> weights;
     HashMap<String, Double> avgWeights;
+    ArrayList<String> possibleLabels;
 
     public AveragedPerceptron() {
         weights = new HashMap<String, Double>(1000000);
         avgWeights = new HashMap<String, Double>(1000000);
         iteration = 1;
+        possibleLabels = new ArrayList<String>();
     }
 
     @Override
@@ -39,7 +41,7 @@ public class AveragedPerceptron extends OnlineClassifier implements Serializable
     }
 
     @Override
-    public void saveModel(String modelPath) throws  Exception {
+    public void saveModel(String modelPath, ArrayList<String> possibleLabels) throws  Exception {
         HashMap<String, Double> finalAverageWeight = new HashMap<String, Double>(avgWeights.size());
 
         for (String feat : weights.keySet()) {
@@ -53,6 +55,7 @@ public class AveragedPerceptron extends OnlineClassifier implements Serializable
         ObjectOutput writer = new ObjectOutputStream(gz);
         
         writer.writeObject(finalAverageWeight);
+        writer.writeObject(possibleLabels);
         writer.flush();
         writer.close();
     }
@@ -64,9 +67,11 @@ public class AveragedPerceptron extends OnlineClassifier implements Serializable
 
         ObjectInputStream reader = new ObjectInputStream(gz);
         HashMap<String, Double> avgWeights= (HashMap<String, Double>)reader.readObject();
-
+        ArrayList<String> labels =  (ArrayList<String>)reader.readObject();
+        
         AveragedPerceptron averagedPerceptron=new AveragedPerceptron();
         averagedPerceptron.avgWeights=avgWeights;
+        averagedPerceptron.possibleLabels = labels;
 
         return averagedPerceptron;
     }
@@ -84,6 +89,10 @@ public class AveragedPerceptron extends OnlineClassifier implements Serializable
                     score+=map.get(feature);
         }
         return score;
+    }
+
+    public ArrayList<String> getPossibleLabels() {
+        return possibleLabels;
     }
 
     @Override

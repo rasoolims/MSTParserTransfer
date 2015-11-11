@@ -14,7 +14,7 @@ public abstract class OnlineClassifier {
     protected  int iteration;
     public abstract void updateWeight(String feature, double change);
     public abstract  double score(ArrayList<String> features,boolean decode);
-    public abstract void saveModel(String modelPath)  throws  Exception;
+    public abstract void saveModel(String modelPath, ArrayList<String> possibleLabels)  throws  Exception;
     public void incrementIteration() {
         iteration++;
     }
