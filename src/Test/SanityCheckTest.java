@@ -1,9 +1,7 @@
 package Test;
 
 import Accessories.TreebankReader;
-import Classifier.AdaGrad;
 import Classifier.AveragedPerceptron;
-import Classifier.OnlineClassifier;
 import Structures.Sentence;
 import Trainer.PartialTreeTrainer;
 
