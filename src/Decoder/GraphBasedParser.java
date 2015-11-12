@@ -1,9 +1,10 @@
 package Decoder;
 
-import Classifier.OnlineClassifier;
+import Classifier.AveragedPerceptron;
 import Structures.Sentence;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Mohammad Sadegh Rasooli.
@@ -13,16 +14,16 @@ import java.util.ArrayList;
  * To report any bugs or problems contact rasooli@cs.columbia.edu
  */
 public class GraphBasedParser {
-    OnlineClassifier classifier;
+    AveragedPerceptron classifier;
     ArrayList<String> labels;
 
-    public GraphBasedParser(OnlineClassifier perceptron,
+    public GraphBasedParser(AveragedPerceptron perceptron,
                             ArrayList<String> labels) {
         this.classifier = perceptron;
         this.labels = labels;
     }
 
-    public Sentence eisner1stOrder(Sentence sentence, boolean decode) {
+    public Sentence eisner1stOrder(Sentence sentence, boolean decode, HashMap<String, String[]> brownClusters) {
         int l = sentence.length();
         double[][] scores = new double[l][l];
         String[][] bestLabel = new String[l][l];
@@ -36,22 +37,22 @@ public class GraphBasedParser {
                 for (int j = i + 1; j < l; j++) {
                     scores[i][j] = Double.NEGATIVE_INFINITY;
                     scores[j][i] = Double.NEGATIVE_INFINITY;
-                    ArrayList<String> ijFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, i, j);
-                    ArrayList<String> jiFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, j, i);
+                    ArrayList<String> ijFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, i, j,brownClusters);
+                    ArrayList<String> jiFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, j, i,brownClusters);
 
-                    double sij =   classifier.score(ijFeatures, decode);
-                    double sji =   classifier.score(jiFeatures, decode);
+                    double sij =  classifier.score(ijFeatures, decode,"");
+                    double sji =  classifier.score(jiFeatures, decode,"");
                     
-                    for (int lab = 0; lab < labels.size(); lab++) {
-                        double s1 = sij + classifier.score(FeatureExtractor.extractExtraLabelFeatures(ijFeatures, labels.get(lab)), decode);
+                    for (String label:labels) {
+                        double s1 = sij + classifier.score(ijFeatures, decode, label);
                         if (s1 > scores[i][j]) {
                             scores[i][j] = s1;
-                            bestLabel[i][j] = labels.get(lab);
+                            bestLabel[i][j] = label;
                         }
-                        double s2 = sji + classifier.score(FeatureExtractor.extractExtraLabelFeatures(jiFeatures, labels.get(lab)), decode);
+                        double s2 = sji + classifier.score(jiFeatures, decode,label);
                         if (s2 > scores[j][i]) {
                             scores[j][i] = s2;
-                            bestLabel[j][i] = labels.get(lab);
+                            bestLabel[j][i] = label;
                         }
                     }
                 }

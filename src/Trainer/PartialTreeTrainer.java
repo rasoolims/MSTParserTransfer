@@ -1,7 +1,7 @@
 package Trainer;
 
 import Accessories.TreebankReader;
-import Classifier.OnlineClassifier;
+import Classifier.AveragedPerceptron;
 import Decoder.FeatureExtractor;
 import Decoder.GraphBasedParser;
 import Structures.Sentence;
@@ -22,8 +22,10 @@ import java.util.HashSet;
 public class PartialTreeTrainer {
 
     public static void standardTrain(ArrayList<Sentence> trainSentences, ArrayList<Sentence> devSentences, ArrayList<String> possibleLabels,
-                             OnlineClassifier onlineClassifier, String modelPath, int maxIter) throws Exception {
+                             AveragedPerceptron onlineClassifier, String modelPath, int maxIter) throws Exception {
 
+        HashMap<String,String[]> brownClusters = (onlineClassifier).getBrownClusters();
+        System.out.println("number of training instances: " + trainSentences.size());
         for (int iter = 0; iter < maxIter; iter++) {
             int numDep = 0;
             double correct = 0;
@@ -34,10 +36,10 @@ public class PartialTreeTrainer {
             int senCount = 0;
             for (Sentence sentence : trainSentences) {
                 senCount++;
-                if (senCount % 10 == 0) {
+                if (senCount % 100 == 0) {
                     System.out.print(senCount + "...");
                 }
-                Sentence parseTree = trainParser.eisner1stOrder(sentence, false);
+                Sentence parseTree = trainParser.eisner1stOrder(sentence, false,brownClusters);
 
                 for (int ch = 1; ch < sentence.length(); ch++) {
                     numDep++;
@@ -48,22 +50,27 @@ public class PartialTreeTrainer {
                     String bestLabel = parseTree.label(ch);
 
                     if (argmax != goldHead || !bestLabel.equals(goldLabel)) {
-                        ArrayList<String> predictedFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, argmax, ch);
-                        ArrayList<String> goldFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, goldHead, ch);
+                        ArrayList<String> predictedFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, argmax, ch,brownClusters);
+                        ArrayList<String> goldFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, goldHead, ch,brownClusters);
 
                         if(argmax!=goldHead) {
-                            for (String predicted : predictedFeatures)
-                                onlineClassifier.updateWeight(predicted, -1);
-                            for (String gold : goldFeatures)
-                                onlineClassifier.updateWeight(gold, 1);
+                            for (String predicted : predictedFeatures) {
+                                onlineClassifier.updateWeight(predicted, -1, bestLabel);
+                                onlineClassifier.updateWeight(predicted, -1, "");
+                            }
+                            for (String gold : goldFeatures)  {
+                                onlineClassifier.updateWeight(gold, 1,goldLabel);
+                                onlineClassifier.updateWeight(gold, 1,"");
+                            }
                         }
-                        
+                        /*
                         ArrayList<String> predictedLabelFeatures = FeatureExtractor.extractExtraLabelFeatures(predictedFeatures,bestLabel);
                         ArrayList<String> goldLabelFeatures = FeatureExtractor.extractExtraLabelFeatures(goldFeatures,goldLabel);
                         for (String predicted : predictedLabelFeatures)
-                            onlineClassifier.updateWeight(predicted, -1);
+                            onlineClassifier.updateWeight(predicted, -1, bestLabel);
                         for (String gold : goldLabelFeatures)
-                            onlineClassifier.updateWeight(gold, 1);
+                            onlineClassifier.updateWeight(gold, 1, goldLabel);
+                            */
                     } else {
                         correct++;
                     }
@@ -72,7 +79,6 @@ public class PartialTreeTrainer {
             }
             System.out.println("");
             double accuracy = 100.0 * correct / numDep;
-            System.out.println("size : " + onlineClassifier.size());
             System.out.println("accuracy : " + accuracy);
 
             System.out.print("\nsaving current model...");
@@ -80,7 +86,7 @@ public class PartialTreeTrainer {
             System.out.println("done!");
 
             System.out.print("loading current model...");
-            OnlineClassifier avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + iter+1);
+            AveragedPerceptron avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + iter+1);
             System.out.println("done!");
 
             GraphBasedParser parser = new GraphBasedParser(avgPerceptron, possibleLabels);
@@ -96,7 +102,7 @@ public class PartialTreeTrainer {
             senCount = 0;
             long start = System.currentTimeMillis();
             for (Sentence sentence : devSentences) {
-                Sentence parseTree = parser.eisner1stOrder(sentence, true);
+                Sentence parseTree = parser.eisner1stOrder(sentence, true,brownClusters);
                 senCount++;
                 if (senCount % 100 == 0) {
                     System.out.print(senCount + "...");

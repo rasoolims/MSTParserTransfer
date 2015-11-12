@@ -9,6 +9,7 @@ import Trainer.PartialTreeTrainer;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Mohammad Sadegh Rasooli.
@@ -26,12 +27,15 @@ public class SanityCheckTest {
         boolean train = true;
         String inputPath = "";
         String outputPath = "";
+        String clusterPath = "";
 
         if(args.length>3){
             if (args[0].equals("train")){
                 trainPath = args[1];
                 devPath = args[2];
                 modelPath = args[3];
+                if(args.length>4)
+                    clusterPath = args[4];
                 train = true;
             } else if(args[0].equals("parse")){
                 inputPath = args[1];
@@ -45,14 +49,13 @@ public class SanityCheckTest {
         }
 
         if(train) {
-            AveragedPerceptron onlineClassifier = new AveragedPerceptron();
             ArrayList<Sentence> devData = new ArrayList<Sentence>();
 
             if (devPath.length() > 1) {
                 devData = TreebankReader.readConllSentences(devPath);
             }
             ArrayList<String> possibleLabels = new ArrayList<String>();
-
+            possibleLabels.add("");
 
             ArrayList<Sentence> trainData = TreebankReader.readConllSentences(trainPath);
             for (Sentence sentence : trainData) {
@@ -65,21 +68,28 @@ public class SanityCheckTest {
                 }
             }
 
+            AveragedPerceptron onlineClassifier = new AveragedPerceptron(possibleLabels);
+
+            if(!clusterPath.equals(""))
+                onlineClassifier.readBrownClusters(clusterPath);
+
+            System.out.println("num of brown cluster words from file: "+ clusterPath+" ->"+ onlineClassifier.getBrownClusters().size());
+
             PartialTreeTrainer.standardTrain(trainData, devData, possibleLabels, onlineClassifier, modelPath, 30);
         }  else {
-            AveragedPerceptron averagedPerceptron = new AveragedPerceptron();
-            averagedPerceptron = (AveragedPerceptron) averagedPerceptron.loadModel(modelPath);
+            AveragedPerceptron averagedPerceptron =  AveragedPerceptron.loadModel(modelPath);
             ArrayList<Sentence> inputData = TreebankReader.readConllSentences(inputPath);
             GraphBasedParser parser = new GraphBasedParser(averagedPerceptron, averagedPerceptron.getPossibleLabels());
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath));
 
+            HashMap<String,String[]> brownClusters = averagedPerceptron.getBrownClusters();
             long start = System.currentTimeMillis();
             int count =0;
             for(Sentence data: inputData){
                 count++;
-                 Sentence parsed = parser.eisner1stOrder(data,true);
+                 Sentence parsed = parser.eisner1stOrder(data,true,brownClusters);
                 writer.write(parsed.toString());
-                if(count%10==0)
+                if(count%100==0)
                     System.out.print(count+"...");
             }
             System.out.print(count+"\n");
