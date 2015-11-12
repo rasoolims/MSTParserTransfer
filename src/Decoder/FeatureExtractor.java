@@ -14,7 +14,7 @@ import java.util.HashMap;
  */
 
 public class FeatureExtractor {
-    public static  ArrayList<String> extract1stOrderFeatures(Sentence sentence, int headIndex, int childIndex , HashMap<String,String[]> brownClusters) {
+    public static ArrayList<String> extract1stOrderFeatures(Sentence sentence, int headIndex, int childIndex , HashMap<String,String[]> brownClusters) {
         ArrayList<String> features = new ArrayList<String>(50);
         String cw = sentence.word(childIndex);
         String cp = sentence.pos(childIndex);
@@ -120,7 +120,6 @@ public class FeatureExtractor {
             tempFeat = "hbc_cbc22:" + hbc[2] + "|" + cbc[2];
             features.add(tempFeat);
 
-            /*
             tempFeat = "hbc_cbc01:" + hbc[0] + "|" + cbc[1];
             features.add(tempFeat);
 
@@ -138,7 +137,6 @@ public class FeatureExtractor {
 
             tempFeat = "hbc_cbc21:" + hbc[2] + "|" + cbc[1];
             features.add(tempFeat);
-            */
         }
 
         tempFeat = "hp_cp_d:" + hp + "|" + cp + "|" + distance + "|" + direction;
@@ -156,7 +154,6 @@ public class FeatureExtractor {
             tempFeat = "hbc_cbc_d22:" + hbc[2] + "|" + cbc[2] + "|" + distance + "|" + direction;
             features.add(tempFeat);
             
-            /*
             tempFeat = "hbc_cbc_d01:" + hbc[0] + "|" + cbc[1]+ "|" + distance +"|"+direction;
             features.add(tempFeat);
             
@@ -175,8 +172,6 @@ public class FeatureExtractor {
 
             tempFeat = "hbc_cbc_d21:" + hbc[2] + "|" + cbc[1]+ "|" + distance +"|"+direction;
             features.add(tempFeat);
-              */
-
         }
 
         /**
@@ -214,4 +209,56 @@ public class FeatureExtractor {
 
     }
 
+    public static int retriveLangIdex(String depRelation, String modPod, String headPos, String language){
+       
+        int index =-1;
+        if (!(language.equals("en") || language.equals("de") || language.equals("sv") ||
+                language.equals("pt") || language.equals("es")  ||
+                language.equals("it")  || language.equals("fr")  || language.equals("id") || language.equals("ko")  || language.equals("ja"))  )
+            return index;
+            
+            
+        if(depRelation.contains("subj")){
+            if(language.equals("en") || language.equals("pt")||language.equals("de")
+                    ||language.equals("fr")||language.equals("sv") || language.equals("ko")||language.equals("id")||language.equals("ja"))
+                index = 0;
+        } else if (depRelation.contains("obj")) {
+            if (language.equals("en") || language.equals("pt") || language.equals("es")
+                    || language.equals("fr") || language.equals("sv") || language.equals("it") || language.equals("id"))
+                index = 2;
+            else if (language.equals("ko") || language.equals("ja"))
+                index = 3;
+        }  else if(headPos.equals("ADJ") && modPod.equals("NOUN")){
+            if (language.equals("en") || language.equals("de") || language.equals("sv") || language.equals("ko") 
+                    || language.equals("ja") )
+                index = 4;
+            else if (language.equals("pt") || language.equals("es")  ||
+                    language.equals("it")  || language.equals("fr")  || language.equals("id"))
+                index = 5;
+        } else if(headPos.equals("ADP") && modPod.equals("NOUN")){
+            if (language.equals("en") || language.equals("de") || language.equals("sv") ||
+                    language.equals("pt") || language.equals("es")  ||
+                    language.equals("it")  || language.equals("fr")  || language.equals("id") )
+                index = 6;
+            else if (language.equals("ko") || language.equals("ja"))
+                index = 7;
+        }  else if(headPos.equals("NOUN") && modPod.equals("NOUN")){
+            if ( language.equals("de")  ||
+                    language.equals("pt") || language.equals("es")  ||
+                    language.equals("it")  || language.equals("fr")  || language.equals("id") )
+                index = 8;
+            else if (language.equals("ko") || language.equals("ja")|| language.equals("sv"))
+                index = 9;
+        }  else if (depRelation.equals("det")){
+            if (language.equals("en") || language.equals("de") || language.equals("sv") ||
+                    language.equals("pt") || language.equals("es")  ||
+                    language.equals("it")  || language.equals("fr")  ||language.equals("ko") || language.equals("ja") )
+                index = 10;
+            else if (language.equals("id"))
+                index = 11;
+        }
+        
+        
+        return index;
+    }
 }

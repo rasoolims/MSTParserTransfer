@@ -42,14 +42,28 @@ public class GraphBasedParser {
 
                     double[] sijScores = classifier.score(ijFeatures, decode);
                     double[] sjiScores = classifier.score(jiFeatures, decode);
+                    double[] sijSharedScores = classifier.sharedScores(ijFeatures, decode);
+                    double[] sjiSharedScores = classifier.sharedScores(jiFeatures,decode);
 
                     for (int lab = 1; lab < labels.size(); lab++) {
+                        
+                        int sijIndex =  FeatureExtractor.retriveLangIdex( labels.get(lab),sentence.pos(j),sentence.pos(i),sentence.getLanguageID());
+                        int sjiIndex =  FeatureExtractor.retriveLangIdex( labels.get(lab),sentence.pos(i),sentence.pos(j),sentence.getLanguageID());
+
                         double s1 = sijScores[lab] + sijScores[0];
+                        if(sijIndex>=0){
+                             s1+= sijSharedScores[sijIndex];
+                        }
+                        
                         if (s1 > scores[i][j]) {
                             scores[i][j] = s1;
                             bestLabel[i][j] = labels.get(lab);
                         }
+                        
                         double s2 = sjiScores[lab] + sjiScores[0];
+                        if(sjiIndex>=0){
+                            s2+= sjiSharedScores[sjiIndex];
+                        }
                         if (s2 > scores[j][i]) {
                             scores[j][i] = s2;
                             bestLabel[j][i] = labels.get(lab);

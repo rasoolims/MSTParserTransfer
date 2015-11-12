@@ -23,6 +23,8 @@ public class SanityCheckTest {
     public static void main(String[] args) throws Exception {
         String trainPath = "/Users/msr/Documents/phd_work/data_tools/universal_treebanks_v2.0/std/es/es-universal-test.conll";
         String devPath = "/Users/msr/Documents/phd_work/data_tools/universal_treebanks_v2.0/std/es/es-universal-test.conll";
+        trainPath = "/tmp/all.family.concat.train.id.conll";
+        devPath = "/tmp/dev.id.conll";
         String modelPath = "/tmp/model";
         boolean train = true;
         String inputPath = "";
@@ -68,7 +70,7 @@ public class SanityCheckTest {
                 }
             }
 
-            AveragedPerceptron onlineClassifier = new AveragedPerceptron(possibleLabels);
+            AveragedPerceptron onlineClassifier = new AveragedPerceptron(possibleLabels,24);
 
             if(!clusterPath.equals(""))
                 onlineClassifier.readBrownClusters(clusterPath);

@@ -57,10 +57,22 @@ public class PartialTreeTrainer {
                             for (String predicted : predictedFeatures) {
                                 onlineClassifier.updateWeight(predicted, -1, bestLabel);
                                 onlineClassifier.updateWeight(predicted, -1, "");
+                                
+                                int index= FeatureExtractor.retriveLangIdex(bestLabel,sentence.pos(ch),sentence.pos(argmax),sentence.getLanguageID());
+                                if(index>=0){
+                                    onlineClassifier.updateSharedWeight(predicted, -1, index);
+                                    onlineClassifier.updateSharedWeight(predicted, -1, index + 12);
+                                }
                             }
                             for (String gold : goldFeatures)  {
                                 onlineClassifier.updateWeight(gold, 1,goldLabel);
                                 onlineClassifier.updateWeight(gold, 1,"");
+
+                                int index= FeatureExtractor.retriveLangIdex(goldLabel,sentence.pos(ch),sentence.pos(goldHead),sentence.getLanguageID());
+                                if(index>=0){
+                                    onlineClassifier.updateSharedWeight(gold, 1, index);
+                                    onlineClassifier.updateSharedWeight(gold, 1, index + 12);
+                                }
                             }
                         }
                     } else {
