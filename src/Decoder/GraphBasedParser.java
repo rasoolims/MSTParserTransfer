@@ -37,22 +37,22 @@ public class GraphBasedParser {
                 for (int j = i + 1; j < l; j++) {
                     scores[i][j] = Double.NEGATIVE_INFINITY;
                     scores[j][i] = Double.NEGATIVE_INFINITY;
-                    ArrayList<String> ijFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, i, j,brownClusters);
-                    ArrayList<String> jiFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, j, i,brownClusters);
+                    ArrayList<String> ijFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, i, j, brownClusters);
+                    ArrayList<String> jiFeatures = FeatureExtractor.extract1stOrderFeatures(sentence, j, i, brownClusters);
 
-                    double sij =  classifier.score(ijFeatures, decode,"");
-                    double sji =  classifier.score(jiFeatures, decode,"");
-                    
-                    for (String label:labels) {
-                        double s1 = sij + classifier.score(ijFeatures, decode, label);
+                    double[] sijScores = classifier.score(ijFeatures, decode);
+                    double[] sjiScores = classifier.score(jiFeatures, decode);
+
+                    for (int lab = 1; lab < labels.size(); lab++) {
+                        double s1 = sijScores[lab] + sijScores[0];
                         if (s1 > scores[i][j]) {
                             scores[i][j] = s1;
-                            bestLabel[i][j] = label;
+                            bestLabel[i][j] = labels.get(lab);
                         }
-                        double s2 = sji + classifier.score(jiFeatures, decode,label);
+                        double s2 = sjiScores[lab] + sjiScores[0];
                         if (s2 > scores[j][i]) {
                             scores[j][i] = s2;
-                            bestLabel[j][i] = label;
+                            bestLabel[j][i] = labels.get(lab);
                         }
                     }
                 }

@@ -3,7 +3,6 @@ package Classifier;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -15,10 +14,10 @@ import java.util.zip.GZIPOutputStream;
  * To report any bugs or problems contact rasooli@cs.columbia.edu
  */
 public class AveragedPerceptron implements Serializable {
-    HashMap<String, Double>[] weights;
-    HashMap<String, Double>[] avgWeights;
-    ArrayList<String> possibleLabels;      
     public HashMap<String,Integer> labelMap;
+    HashMap<String, double[]> weights;
+    HashMap<String, double[]> avgWeights;
+    ArrayList<String> possibleLabels;
     HashMap<String,String[]> brownClusters;
     int iteration;
     
@@ -27,53 +26,67 @@ public class AveragedPerceptron implements Serializable {
         labelMap = new HashMap<String, Integer>();
         for (int i=0;i<possibleLabels.size();i++)
             labelMap.put(possibleLabels.get(i),i);
-        weights = new HashMap[possibleLabels.size()];
-        avgWeights = new HashMap[possibleLabels.size()];
-        
-        for(int i=0;i<weights.length;i++) {
-            weights[i] = new HashMap<String, Double>(1000);
-            avgWeights[i] = new HashMap<String, Double>(1000);
-        }
+        weights = new HashMap<String, double[]>();
+        avgWeights = new HashMap<String, double[]>();
         iteration = 1;
         brownClusters = new HashMap<String, String[]>();
     }
 
+    public static AveragedPerceptron loadModel(String modelPath) throws Exception {
+        FileInputStream fos = new FileInputStream(modelPath);
+        GZIPInputStream gz = new GZIPInputStream(fos);
+
+        ObjectInputStream reader = new ObjectInputStream(gz);
+        HashMap<String, double[]> avgWeights = (HashMap<String, double[]>) reader.readObject();
+        ArrayList<String> labels = (ArrayList<String>) reader.readObject();
+        HashMap<String, String[]> bc = (HashMap<String, String[]>) reader.readObject();
+        AveragedPerceptron averagedPerceptron = new AveragedPerceptron(labels);
+        averagedPerceptron.avgWeights = avgWeights;
+        averagedPerceptron.brownClusters = bc;
+
+        return averagedPerceptron;
+    }
+
     public void updateWeight(String feature, double change, String label){
         int labelIndex = labelMap.get(label);
-        if(!weights[labelIndex].containsKey(feature)){
-            weights[labelIndex].put(feature, change);
-        }  else{
-            weights[labelIndex].put(feature, weights[labelIndex].get(feature) + change);
+        double[] w = new double[possibleLabels.size()];
+        if (weights.containsKey(feature)) {
+            w = weights.get(feature);
+        } else {
+            weights.put(feature, w);
         }
+        w[labelIndex] += change;
 
-        if(!avgWeights[labelIndex].containsKey(feature)){
-            avgWeights[labelIndex].put(feature, iteration * change);
-        }  else{
-            avgWeights[labelIndex].put(feature, avgWeights[labelIndex].get(feature) + iteration * change);
+        double[] aw = new double[possibleLabels.size()];
+        if (avgWeights.containsKey(feature)) {
+            aw = avgWeights.get(feature);
+        } else {
+            avgWeights.put(feature, aw);
         }
+        aw[labelIndex] += iteration * change;
     }
-    
+
     public  void incrementIteration(){
         iteration++;
     }
 
     public void saveModel(String modelPath, ArrayList<String> possibleLabels) throws  Exception {
-        HashMap<String, Double>[] finalAverageWeight = new HashMap[weights.length];
-        for(int i=0;i<finalAverageWeight.length;i++)
-            finalAverageWeight[i]= new HashMap<String, Double>(weights[i].size());
+        HashMap<String, double[]> finalAverageWeight = new HashMap<String, double[]>();
 
-        for(int i=0;i<weights.length;i++) {
-            for (String feat : weights[i].keySet()) {
-                double newValue = weights[i].get(feat) - (avgWeights[i].get(feat) / iteration);
-                if (newValue != 0.0)
-                    finalAverageWeight[i].put(feat, newValue);
+        for (String feat : weights.keySet()) {
+            double[] w = weights.get(feat);
+            double[] aw = avgWeights.get(feat);
+            double[] newValue = new double[w.length];
+            for (int i = 0; i < w.length; i++) {
+                newValue[i] = w[i] - (aw[i] / iteration);
             }
+            finalAverageWeight.put(feat, newValue);
         }
         FileOutputStream fos = new FileOutputStream(modelPath);
         GZIPOutputStream gz = new GZIPOutputStream(fos);
 
         ObjectOutput writer = new ObjectOutputStream(gz);
-        
+
         writer.writeObject(finalAverageWeight);
         writer.writeObject(possibleLabels);
         writer.writeObject(brownClusters);
@@ -82,34 +95,21 @@ public class AveragedPerceptron implements Serializable {
         writer.close();
     }
 
-    public static AveragedPerceptron loadModel(String modelPath) throws  Exception {
-        FileInputStream fos = new FileInputStream(modelPath);
-        GZIPInputStream gz = new GZIPInputStream(fos);
-
-        ObjectInputStream reader = new ObjectInputStream(gz);
-        HashMap<String, Double>[] avgWeights= (HashMap[])reader.readObject();
-        ArrayList<String> labels =  (ArrayList<String>)reader.readObject();
-        HashMap<String,String[]> bc =(HashMap<String,String[]>)reader.readObject();
-        AveragedPerceptron averagedPerceptron=new AveragedPerceptron(labels);
-        averagedPerceptron.avgWeights=avgWeights;
-        averagedPerceptron.brownClusters = bc;
-
-        return averagedPerceptron;
-    }
-
-    public double score(ArrayList<String> features,boolean decode, String label){
-        int labelIndex = labelMap.get(label);
-        double score=0.0;
-            HashMap<String,Double> map;
-            if(decode)
-                map= avgWeights[labelIndex];
-            else
-                map= weights[labelIndex];
-        for(String feature:features){
-            if(map.containsKey(feature))
-                    score+=map.get(feature);
+    public double[] score(ArrayList<String> features, boolean decode) {
+        double[] scores = new double[possibleLabels.size()];
+        HashMap<String, double[]> map;
+        if (decode)
+            map = avgWeights;
+        else
+            map = weights;
+        for (String feature : features) {
+            if (map.containsKey(feature)) {
+                double[] w = map.get(feature);
+                for (int k = 0; k < possibleLabels.size(); k++)
+                    scores[k] += w[k];
+            }
         }
-        return score;
+        return scores;
     }
 
     public ArrayList<String> getPossibleLabels() {

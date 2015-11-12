@@ -44,7 +44,7 @@ public class SanityCheckTest {
                 train = false;
             }
         } else{
-            System.out.println(" train/parse train_file/input_file dev_file(can_be_empty with -)/output_file model_file");
+            System.out.println(" train/parse train_file/input_file dev_file(can_be_empty with -)/output_file model_file cluster_file(optional for train)");
             System.exit(0);
         }
 

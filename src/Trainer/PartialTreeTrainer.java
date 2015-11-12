@@ -36,7 +36,7 @@ public class PartialTreeTrainer {
             int senCount = 0;
             for (Sentence sentence : trainSentences) {
                 senCount++;
-                if (senCount % 100 == 0) {
+                if (senCount % 1000 == 0) {
                     System.out.print(senCount + "...");
                 }
                 Sentence parseTree = trainParser.eisner1stOrder(sentence, false,brownClusters);
@@ -63,14 +63,6 @@ public class PartialTreeTrainer {
                                 onlineClassifier.updateWeight(gold, 1,"");
                             }
                         }
-                        /*
-                        ArrayList<String> predictedLabelFeatures = FeatureExtractor.extractExtraLabelFeatures(predictedFeatures,bestLabel);
-                        ArrayList<String> goldLabelFeatures = FeatureExtractor.extractExtraLabelFeatures(goldFeatures,goldLabel);
-                        for (String predicted : predictedLabelFeatures)
-                            onlineClassifier.updateWeight(predicted, -1, bestLabel);
-                        for (String gold : goldLabelFeatures)
-                            onlineClassifier.updateWeight(gold, 1, goldLabel);
-                            */
                     } else {
                         correct++;
                     }
@@ -82,11 +74,11 @@ public class PartialTreeTrainer {
             System.out.println("accuracy : " + accuracy);
 
             System.out.print("\nsaving current model...");
-            onlineClassifier.saveModel(modelPath + "_" + iter+1, possibleLabels);
+            onlineClassifier.saveModel(modelPath + "_" + (iter+1), possibleLabels);
             System.out.println("done!");
 
             System.out.print("loading current model...");
-            AveragedPerceptron avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + iter+1);
+            AveragedPerceptron avgPerceptron = onlineClassifier.loadModel(modelPath + "_" + (iter+1));
             System.out.println("done!");
 
             GraphBasedParser parser = new GraphBasedParser(avgPerceptron, possibleLabels);
